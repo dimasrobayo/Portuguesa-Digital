@@ -1,0 +1,89 @@
+<?php 
+
+    $redir=$_SERVER['HTTP_REFERER']; // Ruta para redireccionar a la pagina que nos llamo
+    $pag=$_SERVER['PHP_SELF'];  // el NOMBRE y ruta de esta misma p�ina.
+    $type=$_GET["view"];
+    $pagina=$pag.'?view='.$view;
+	
+    //se le hace el llamado al archivo de conexion y luego se realiza el enlace.	
+    require("conexion/aut_config.inc.php");
+    $db_conexion=pg_connect("host=$sql_host dbname=$sql_db user=$sql_usuario password=$sql_pass");	
+?>
+
+<?php //seccion para recibir los datos y borrar.
+if (isset($_GET['cedula'])){
+    $cedula= $_GET['cedula'];
+    $status= $_GET['status'];
+
+    if($status == 1) {
+        $status_unlock = 0;
+        $error="bien";	
+        //se le hace el llamado a la funcion de insertar.	
+        $result_lock=pg_query("SELECT unlock_usuario($cedula,$status_unlock)") or die(pg_last_error());
+        pg_close();	
+    }
+    else {
+        $status_unlock = 1;
+        $error="bien";	
+        //se le hace el llamado a la funcion de insertar.	
+        $result_lock=pg_query("SELECT unlock_usuario($cedula,$status_unlock)") or die(pg_last_error());
+        pg_close();	
+    }
+}
+?> 
+
+<div align="center" class="centermain">
+    <div class="main">  
+        <table class="adminusuarios">
+            <tr>
+                <th>
+                    USUARIOS:
+                    <small>
+                        Bloquear o Desbloquear Usuario
+                    </small>
+                </th>
+            </tr>
+        </table>
+        
+        <table class="adminform" border="0">
+            <tr bgcolor="#55baf3">
+                <th colspan="2">
+                    BLOQUEO/DESBLOQUEO DE USUARIO
+                </th>
+            </tr>
+			
+            <tr>
+                <td colspan="2" align="center">                        	
+                    <br />
+                    <strong>Resultado</strong>: 
+                    <?php 
+                        if ($error=="bien") {
+                            echo 'DATOS PROCESADOS CON  &Eacute;XITO!';
+                        }
+                        else  {
+                            echo 'LOS DATOS NO PUEDEN SER PROCESADOS!';			
+                        }			
+                    ?>
+                    <br />	
+                </td>
+            </tr> 
+			
+            <table class="adminform" align="center">
+                <tr align="center">
+                    <td width="100%" valign="top" align="center">
+                        <div id="cpanel">
+                            <div style="float:right;">
+                                <div class="icon">
+                                    <a href="index2.php?view=usuarios">
+                                        <img src="images/panel_inicio.png" alt="salir" align="middle"  border="0" />
+                                        <span>Gestor de Datos</span>
+                                    </a>
+                                </div>
+                            </div>	
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </table>
+    </div>
+</div>

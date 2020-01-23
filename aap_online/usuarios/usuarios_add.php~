@@ -1,0 +1,240 @@
+<?php
+    $redir=$_SERVER['HTTP_REFERER']; // Ruta para redireccionar a la pagina que nos llamo
+    $pag=$_SERVER['PHP_SELF'];  // el NOMBRE y ruta de esta misma p�ina.
+    $type=$_GET["view"];
+    $pagina=$pag.'?view='.$view;
+
+    //Conexion a la base de datos
+    $db_conexion=pg_connect("host=$sql_host dbname=$sql_db user=$sql_empresa password=$sql_pass");
+    
+    if (isset($_GET['error'])) {
+        $error_accion_ms[0]= "La Empresa No puede ser Borrada.<br>Si desea borrarlo, primero cree uno nuevo.";
+        $error_accion_ms[1]= "Datos incompletos.";
+        $error_accion_ms[2]= "Contrase&ntilde;as no coinciden.";
+        $error_accion_ms[3]= "El Nivel de Acceso ha de ser num&eacute;rico.";
+        $error_accion_ms[4]= "El Usuario ya est&aacute; registrado.";
+        $error_accion_ms[5]= "Ya existe un usuario con el n&uacute;mero de c&eacute;dula que usted introdujo.";
+        $error_accion_ms[6]= "El n&uacute;mero de c&eacute;dula que usted introdujo no es v&aacute;lido.";
+        $error_cod = $_GET['error'];
+    }
+    
+?>
+	
+<?php 
+if (isset($_POST[save])) {
+    $cedula = $_POST['cedula'];
+    $nombre = $_POST['nombre'];
+    $apellido = $_POST['apellido'];
+    $usuario = $_POST['usuario'];
+    $password = $_POST['password'];
+    $password1 = $_POST['confirm_password'];
+    $nivel_acceso = $_POST['nivel_acceso'];
+    $status = '1';
+    $unidad = $_POST['cod_unidad'];
+
+    if (($status=="") || ($nivel_acceso=="")) {
+        $error='<div align="left">
+                    <h3 class="error">
+                        <font color="red" style="text-decoration:blink;">
+                            Error: Datos Incompletos, por favor verifique los datos!
+                        </font>
+                    </h3>
+                </div>';
+    }
+    else { 
+        require("conexion/aut_config.inc.php");
+        $db_conexion=pg_connect("host=$sql_host dbname=$sql_db user=$sql_usuario password=$sql_pass");	
+
+        $error="bien";	
+        $passmd5=md5($password);
+
+        $inserta_usuario = pg_query("SELECT insert_usuario($cedula,'$nombre','$apellido','$usuario','$passmd5',$nivel_acceso, $status,$unidad)") or die(pg_last_error());		
+        $result_insert=pg_fetch_array($inserta_usuario);	
+        pg_free_result($inserta_usuario);
+        $resultado_insert=$result_insert[0];	
+        pg_close();	
+        //exit;
+    }     
+}//fin del add        
+?>
+
+<div align="center" class="centermain">
+    <div class="main">  
+        <table class="adminusuarios" width="100%">
+            <tr>
+                <th>
+                    Usuarios:
+                    <small>
+                            Nuevo
+                    </small>
+                </th>
+            </tr>
+        </table>
+        
+        <form method="POST" action="<?php echo $pagina?>" id="QForm" name="QForm" enctype="multipart/form-data"> 
+            <table class="adminform" border="0" width="100%">
+                <tr bgcolor="#55baf3">
+                    <th colspan="2">
+                        Registro de un nuevo usuario
+                    </th>
+                </tr>
+		<tr>
+                    <th colspan="2" height="16" align="left" >
+                        <span> Los campos con <font color="Red" style="bold">(*)</font> son obligatorios</span>
+                    </th>
+                </tr>
+
+                <?php 
+                    if ((isset($_POST[save])) and ($error=="bien")) {		
+                ?> 
+
+                <tr>
+                    <td colspan="2" align="center">                        	
+                        <br />
+                        <strong>Resultado</strong>: 
+                        <?php 
+                            switch($resultado_insert) {
+                                case 0: 
+                                    echo 'No se pudo registrar el usuario porque ya est&aacute; registrado en el sistema ';
+                                    break;
+                                case 1: 
+                                    echo 'Se Registro Un Nuevo Usuario del Sistema con &eacute;xito';	
+                                    break;
+
+                            }				
+                            echo '<br />'.$msg;
+                        ?>
+                        <br />	
+                    </td>
+                </tr> 
+
+                <table class="adminform" align="center" width="100%">
+                    <tr align="center">
+                        <td width="100%" valign="top" align="center">
+                            <div id="cpanel">
+                                <div style="float:right;">
+                                    <div class="icon">
+                                        <a href="index2.php?view=usuarios">
+                                            <img src="images/panel_inicio.png" alt="salir" align="middle"  border="0" />
+                                            <span>Gestor de Datos</span>
+                                        </a>
+                                    </div>
+                                </div>	
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <?php 
+                }
+                else {
+                ?> 
+
+                <?php echo $error;?>
+
+                <tr>
+                    <td width="15%" align="right">
+                        C&eacute;dula: <font color="Red">(*)</font>
+                    </td>
+                    <td width="85%">
+                        <input class="validate[required]" type="text" id="cedula" name="cedula" maxlength="8" size="12"/>
+                    </td>                       
+                </tr>
+
+                <tr>
+                    <td align="right">
+                        Nombres: <font color="Red">(*)</font>
+                    </td>
+                    <td>
+                        <input class="validate[required] text-input" type="text" id="nombre" name="nombre" maxlength="25" size="25"/>			
+                    </td>			
+                </tr>
+
+                <tr>
+                    <td align="right">
+                        Apellidos: <font color="Red">(*)</font>
+                    </td>
+                    <td>
+                        <input class="validate[required] text-input" type="text" id="apellido"  name="apellido" maxlength="25" size="25"/>
+                    </td>			
+                </tr>
+
+
+		<tr>
+		    <td width="20%" align="right">
+                    	Unidad/Departamento: <font color="Red">(*)</font>
+                    </td>
+                    <td>
+                        <select id="cod_unidad" name="cod_unidad" size="0" class="validate[required]">
+				<option value="">----</option>	        
+                                    <?php
+                                         $db_conexion=pg_connect("host=$sql_host dbname=$sql_db user=$sql_usuario password=$sql_pass");
+                                         $consulta=pg_query("select * from unidades order by cod_unidad");
+                                         while ($array_consulta=pg_fetch_array($consulta)) {
+                                     	      echo '<option value="'.$array_consulta[0].'">'.$array_consulta[2].'</option>';
+                                         }
+                                         pg_free_result($consulta);
+                                    ?>
+                        </select>	
+                    </td>			
+		</tr>
+
+                <tr>
+                    <td align="right">
+                        Usuario: <font color="Red">(*)</font>
+                    </td>
+                    <td>
+                        <input type="text" id="usuario" name="usuario" class="validate[required] text-input" maxlength="15" size="20"/>				
+                    </td>			
+                </tr>
+
+                <tr>
+                    <td align="right">
+                        Password: <font color="Red">(*)</font>
+                    </td>
+                    <td>
+                        <input class="inputbox validate[required]" id="password" name="password" type="password" maxlength="10" size="10"/>	
+                    </td>			
+                </tr>
+
+                <tr>
+                    <td align="right">
+                        Confirmar Password: <font color="Red">(*)</font>
+                    </td>
+                    <td>
+                        <input class="validate[required,equals[password]]" type="password" id="password1" name="confirm_password" maxlength="10" size="10"/>
+                    </td>			
+                </tr>
+
+                <tr>
+                    <td align="right">
+                        Nivel de Acceso: <font color="Red">(*)</font>
+                    </td>
+                    <td>			
+                        <select id="nivel_acceso" name="nivel_acceso" class="validate[required]" size="0" class="options">	        
+                            <option value="">----</option>	
+                            <option value="0">Administrador</option>
+                            <option value="1">Usuario General</option>
+                        </select>	
+                        <script type="text/javascript">
+                            var codigo = new LiveValidation('nivel_acceso');
+                            codigo.add(Validate.Presence);
+                        </script>
+                    </td>			
+                </tr>
+
+                <tr>
+                    <td bgcolor="#55baf3" colspan="2" align="center">
+                        <input type="submit" class="button" name="save" value="  Guardar  " >
+                        <input class="button" type="reset" value="Limpiar" name="Refresh"> 
+                        <input  class="button" type="button" onClick="history.back()" value="Regresar">
+                    </td>
+                </tr>
+                <?php 
+                }
+                ?> 
+            </table>
+        </form>
+        
+    </div>
+</div>
